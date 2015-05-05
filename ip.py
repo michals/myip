@@ -16,10 +16,19 @@ def store(host, ip):
     print "storing %s=%s" % (host, ip)
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute('CREATE TABLE IF NOT EXISTS hosts (host UNIQUE, ip);')
+    cur.execute('CREATE TABLE IF NOT EXISTS hosts (host UNIQUE, ip, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP);')
     cur.execute('INSERT OR REPLACE INTO hosts (host, ip) VALUES (?, ?)', (host, ip))
     conn.commit()
     cur.close()
+
+def list_table():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM hosts')
+    result = cur.fetchall()
+    cur.close()
+    conn.close()
+    return '\n'.join(['\t'.join(row) for row in result])
 
 class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
@@ -35,6 +44,8 @@ class MyHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             except:
                 result = "error\n"
                 print sys.exc_info()
+        elif (o.path == '/list'):
+            result = list_table() + '\n'
         else:
             result = "error\n"
         self.wfile.write(result)
